@@ -10,44 +10,52 @@ import {
   Alert,
   StyleSheet
 } from 'react-native';
+  
+  
 
 export default function HomeScreen() {
-  const [tasks, setTasks] = useState([]);  // Lista de tarefas
-  const [modalVisible, setModalVisible] = useState(false);  // Modal visível ou não
-  const [newTask, setNewTask] = useState('');  // Texto da nova tarefa
-  const [editIndex, setEditIndex] = useState(null);  // Índice da tarefa em edição
+  const [contacts, setContacts] = useState([]); // Lista de contatos
+  const [modalVisible, setModalVisible] = useState(false); // Modal visível ou não
+  const [newName, setNewName] = useState(''); // Nome do novo contato
+  const [newPhone, setNewPhone] = useState(''); // Telefone do novo contato
+  const [editIndex, setEditIndex] = useState(null); // Índice do contato em edição
 
-  // Função para adicionar ou editar tarefa
-  function addOrEditTask() {
-    if (!newTask) return;  // Se o campo estiver vazio (sem espaços ou texto), não faz nada
+  // Função para adicionar ou editar contato
+  function addOrEditContact() {
+    if (!newName || !newPhone) return; // Se os campos estiverem vazios, não faz nada
+
+    const updatedContacts = [...contacts];
+    const formattedPhone = formatPhoneNumber(newPhone); // Formata o número de telefone
 
     if (editIndex === null) {
-      // Adiciona uma nova tarefa diretamente ao estado
-      tasks.push(newTask);  // Modifica o array diretamente
+      // Adiciona um novo contato
+      updatedContacts.push({ name: newName, phone: formattedPhone });
     } else {
-      // Edita uma tarefa existente
-      tasks[editIndex] = newTask;  // Atualiza a tarefa no índice de edição
-      setEditIndex(null);  // Limpa o índice de edição
+      // Edita um contato existente
+      updatedContacts[editIndex] = { name: newName, phone: formattedPhone };
+      setEditIndex(null); // Limpa o índice de edição
     }
 
-    setTasks(tasks);  // Atualiza o estado com a lista de tarefas modificada
-    setNewTask('');  // Limpa o campo de texto
-    setModalVisible(false);  // Fecha o modal
+    setContacts(updatedContacts); // Atualiza o estado com a lista de contatos modificada
+    setNewName(''); // Limpa o campo de nome
+    setNewPhone(''); // Limpa o campo de telefone
+    setModalVisible(false); // Fecha o modal
   }
 
-  // Função para confirmar exclusão de tarefa
+  // Função para confirmar exclusão de contato
   function confirmDelete(index) {
     Alert.alert(
-      'Excluir tarefa?',
-      `Remover "${tasks[index]}"?`,
+      'Excluir contato?',
+      `Remover "${contacts[index].name}"?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Excluir',
           style: 'destructive',
           onPress: () => {
-            tasks.splice(index, 1);  // Remove a tarefa diretamente do array
-            setTasks(tasks);  // Atualiza o estado com a lista modificada
+            const updatedContacts = [...contacts];
+            updatedContacts.splice(index, 1); // Remove o contato do array
+            setContacts(updatedContacts); // Atualiza o estado
           },
         },
       ]
@@ -56,9 +64,10 @@ export default function HomeScreen() {
 
   // Função para abrir o modal em modo de edição
   function openEditModal(index) {
-    setNewTask(tasks[index]);  // Carrega o texto da tarefa no campo de edição
-    setEditIndex(index);  // Define o índice da tarefa a ser editada
-    setModalVisible(true);  // Abre o modal
+    setNewName(contacts[index].name); // Carrega o nome do contato no campo de edição
+    setNewPhone(contacts[index].phone); // Carrega o telefone do contato no campo de edição
+    setEditIndex(index); // Define o índice do contato a ser editado
+    setModalVisible(true); // Abre o modal
   }
 
   return (
@@ -66,32 +75,36 @@ export default function HomeScreen() {
       {/* Botão para abrir o modal */}
       <Pressable
         onPress={() => {
-          setNewTask('');
+          setNewName('');
+          setNewPhone('');
           setEditIndex(null);
           setModalVisible(true);
         }}
         style={styles.addButton}
       >
-        <Text style={styles.addButtonText}>＋ Nova Tarefa</Text>
+        <Text style={styles.addButtonText}>＋ Novo Contato</Text>
       </Pressable>
 
-      {/* Lista de tarefas */}
+      {/* Lista de contatos */}
       <FlatList
-        data={tasks}
-        keyExtractor={(_, i) => String(i)}  // Identificador único para cada item
+        data={contacts}
+        keyExtractor={(_, i) => String(i)} // Identificador único para cada item
         renderItem={({ item, index }) => (
           <View style={styles.taskItemContainer}>
-            <Text style={styles.taskItem}>{item}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.taskItem}>{item.name}</Text>
+              <Text style={styles.taskItemPhone}>{item.phone}</Text>
+            </View>
             <View style={styles.taskButtons}>
               {/* Botões para editar e excluir */}
               <Pressable
-                onPress={() => openEditModal(index)}  // Abre o modal para editar
+                onPress={() => openEditModal(index)} // Abre o modal para editar
                 style={[styles.taskButton, styles.editButton]}
               >
                 <Text style={styles.buttonText}>✏️</Text>
               </Pressable>
               <Pressable
-                onPress={() => confirmDelete(index)}  // Exclui a tarefa
+                onPress={() => confirmDelete(index)} // Exclui o contato
                 style={[styles.taskButton, styles.deleteButton]}
               >
                 <Text style={styles.buttonText}>🗑️</Text>
@@ -100,11 +113,11 @@ export default function HomeScreen() {
           </View>
         )}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>Nenhuma tarefa ainda!</Text>
+          <Text style={styles.emptyText}>Nenhum contato adicionado!</Text>
         }
       />
 
-      {/* Modal para adicionar ou editar tarefa */}
+      {/* Modal para adicionar ou editar contato */}
       <Modal
         animationType="slide"
         transparent
@@ -114,15 +127,22 @@ export default function HomeScreen() {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContent}>
             <Text style={{ marginBottom: 8 }}>
-              {editIndex === null ? 'Digite sua nova tarefa:' : 'Edite a tarefa:'}
+              {editIndex === null ? 'Digite seu novo contato:' : 'Edite o contato:'}
             </Text>
             <TextInput
-              value={newTask}  // O valor do campo de texto é controlado pelo estado `newTask`
-              onChangeText={setNewTask}  // Atualiza o estado com o novo texto
-              placeholder="Ex: Estudar Hooks"
+              value={newName} // O valor do campo de texto é controlado pelo estado `newName`
+              onChangeText={setNewName} // Atualiza o estado com o novo texto
+              placeholder="Nome:"
               style={styles.input}
             />
-            <Pressable onPress={addOrEditTask} style={{ marginBottom: 8 }}>
+            <TextInput
+              value={newPhone} // O valor do campo de texto é controlado pelo estado `newPhone`
+              onChangeText={setNewPhone} // Atualiza o estado com o novo texto
+              placeholder="Telefone:"
+              keyboardType="phone-pad"
+              style={styles.input}
+            />
+            <Pressable onPress={addOrEditContact} style={{ marginBottom: 8 }}>
               <Text style={{ color: '#6200ee', textAlign: 'center' }}>
                 {editIndex === null ? 'Adicionar' : 'Salvar alterações'}
               </Text>
@@ -147,7 +167,7 @@ const styles = StyleSheet.create({
   addButton: {
     marginBottom: 16,
     alignSelf: 'center',
-    backgroundColor: '#e30613',  // Vermelho (Pantone 485)
+    backgroundColor: 'red',
     padding: 12,
     borderRadius: 8,
   },
@@ -165,8 +185,12 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   taskItem: {
-    flex: 1,
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  taskItemPhone: {
+    fontSize: 14,
+    color: '#666',
   },
   taskButtons: {
     flexDirection: 'row',
@@ -177,10 +201,10 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   editButton: {
-    backgroundColor: '#ffca28',  // Cor de edição (amarelo)
+    backgroundColor: '#ffca28', // Cor de edição (amarelo)
   },
   deleteButton: {
-    backgroundColor: '#f44336',  // Cor de exclusão (vermelho)
+    backgroundColor: '#f44336', // Cor de exclusão (vermelho)
   },
   buttonText: {
     color: '#fff',
@@ -195,7 +219,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',  // Fundo escuro com transparência
+    backgroundColor: 'rgba(0,0,0,0.5)', // Fundo escuro com transparência
   },
   modalContent: {
     width: '80%',
