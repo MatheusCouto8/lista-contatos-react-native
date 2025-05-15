@@ -1,4 +1,3 @@
-// app/index.js
 import React, { useState } from 'react';
 import {
   View,
@@ -8,41 +7,51 @@ import {
   TextInput,
   FlatList,
   Alert,
-  StyleSheet
+  StyleSheet,
 } from 'react-native';
-  
-  
+import ContactItem from '../components/ContactItem.js'; // Importa o componente ContactItem
+
+function formatPhoneNumber(number) {
+  const cleaned = number.replace(/\D/g, '').slice(0, 11);
+  if (cleaned.length <= 2) {
+    return `(${cleaned}`;
+  } else if (cleaned.length <= 6) {
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
+  } else if (cleaned.length <= 10) {
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
+  } else {
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
+  }
+}
 
 export default function HomeScreen() {
-  const [contacts, setContacts] = useState([]); // Lista de contatos
-  const [modalVisible, setModalVisible] = useState(false); // Modal visível ou não
-  const [newName, setNewName] = useState(''); // Nome do novo contato
-  const [newPhone, setNewPhone] = useState(''); // Telefone do novo contato
-  const [editIndex, setEditIndex] = useState(null); // Índice do contato em edição
+  const [contacts, setContacts] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('Amigo');
+  const [editIndex, setEditIndex] = useState(null);
 
-  // Função para adicionar ou editar contato
   function addOrEditContact() {
-    if (!newName || !newPhone) return; // Se os campos estiverem vazios, não faz nada
+    if (!newName || !newPhone) return;
 
     const updatedContacts = [...contacts];
-    const formattedPhone = formatPhoneNumber(newPhone); // Formata o número de telefone
+    const formattedPhone = formatPhoneNumber(newPhone);
 
     if (editIndex === null) {
-      // Adiciona um novo contato
-      updatedContacts.push({ name: newName, phone: formattedPhone });
+      updatedContacts.push({ name: newName, phone: formattedPhone, category: selectedCategory });
     } else {
-      // Edita um contato existente
-      updatedContacts[editIndex] = { name: newName, phone: formattedPhone };
-      setEditIndex(null); // Limpa o índice de edição
+      updatedContacts[editIndex] = { name: newName, phone: formattedPhone, category: selectedCategory };
+      setEditIndex(null);
     }
 
-    setContacts(updatedContacts); // Atualiza o estado com a lista de contatos modificada
-    setNewName(''); // Limpa o campo de nome
-    setNewPhone(''); // Limpa o campo de telefone
-    setModalVisible(false); // Fecha o modal
+    setContacts(updatedContacts);
+    setNewName('');
+    setNewPhone('');
+    setSelectedCategory('Amigo');
+    setModalVisible(false);
   }
 
-  // Função para confirmar exclusão de contato
   function confirmDelete(index) {
     Alert.alert(
       'Excluir contato?',
@@ -54,70 +63,54 @@ export default function HomeScreen() {
           style: 'destructive',
           onPress: () => {
             const updatedContacts = [...contacts];
-            updatedContacts.splice(index, 1); // Remove o contato do array
-            setContacts(updatedContacts); // Atualiza o estado
+            updatedContacts.splice(index, 1);
+            setContacts(updatedContacts);
           },
         },
       ]
     );
   }
 
-  // Função para abrir o modal em modo de edição
   function openEditModal(index) {
-    setNewName(contacts[index].name); // Carrega o nome do contato no campo de edição
-    setNewPhone(contacts[index].phone); // Carrega o telefone do contato no campo de edição
-    setEditIndex(index); // Define o índice do contato a ser editado
-    setModalVisible(true); // Abre o modal
+    setNewName(contacts[index].name);
+    setNewPhone(contacts[index].phone);
+    setSelectedCategory(contacts[index].category || 'Amigo');
+    setEditIndex(index);
+    setModalVisible(true);
   }
 
   return (
     <View style={styles.container}>
-      {/* Botão para abrir o modal */}
-      <Pressable
-        onPress={() => {
-          setNewName('');
-          setNewPhone('');
-          setEditIndex(null);
-          setModalVisible(true);
-        }}
-        style={styles.addButton}
-      >
-        <Text style={styles.addButtonText}>＋ Novo Contato</Text>
-      </Pressable>
-
-      {/* Lista de contatos */}
       <FlatList
         data={contacts}
-        keyExtractor={(_, i) => String(i)} // Identificador único para cada item
+        keyExtractor={(_, i) => String(i)}
+        contentContainerStyle={{ paddingBottom: 100 }}
         renderItem={({ item, index }) => (
-          <View style={styles.taskItemContainer}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.taskItem}>{item.name}</Text>
-              <Text style={styles.taskItemPhone}>{item.phone}</Text>
-            </View>
-            <View style={styles.taskButtons}>
-              {/* Botões para editar e excluir */}
-              <Pressable
-                onPress={() => openEditModal(index)} // Abre o modal para editar
-                style={[styles.taskButton, styles.editButton]}
-              >
-                <Text style={styles.buttonText}>✏️</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => confirmDelete(index)} // Exclui o contato
-                style={[styles.taskButton, styles.deleteButton]}
-              >
-                <Text style={styles.buttonText}>🗑️</Text>
-              </Pressable>
-            </View>
-          </View>
+          <ContactItem
+            item={item}
+            index={index}
+            onEdit={openEditModal}
+            onDelete={confirmDelete}
+          />
         )}
         ListEmptyComponent={
           <Text style={styles.emptyText}>Nenhum contato adicionado!</Text>
         }
       />
 
-      {/* Modal para adicionar ou editar contato */}
+      <Pressable
+        onPress={() => {
+          setNewName('');
+          setNewPhone('');
+          setSelectedCategory('Amigo');
+          setEditIndex(null);
+          setModalVisible(true);
+        }}
+        style={styles.addButton}
+      >
+        <Text style={styles.addButtonText}>＋</Text>
+      </Pressable>
+
       <Modal
         animationType="slide"
         transparent
@@ -126,31 +119,50 @@ export default function HomeScreen() {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContent}>
-            <Text style={{ marginBottom: 8 }}>
-              {editIndex === null ? 'Digite seu novo contato:' : 'Edite o contato:'}
+            <Text style={styles.modalTitle}>
+              {editIndex === null ? 'Novo Contato' : 'Editar Contato'}
             </Text>
             <TextInput
-              value={newName} // O valor do campo de texto é controlado pelo estado `newName`
-              onChangeText={setNewName} // Atualiza o estado com o novo texto
-              placeholder="Nome:"
+              value={newName}
+              onChangeText={setNewName}
+              placeholder="Nome"
               style={styles.input}
             />
             <TextInput
-              value={newPhone} // O valor do campo de texto é controlado pelo estado `newPhone`
-              onChangeText={setNewPhone} // Atualiza o estado com o novo texto
-              placeholder="Telefone:"
+              value={newPhone}
+              onChangeText={(text) => setNewPhone(formatPhoneNumber(text))}
+              placeholder="Telefone"
               keyboardType="phone-pad"
               style={styles.input}
             />
-            <Pressable onPress={addOrEditContact} style={{ marginBottom: 8 }}>
-              <Text style={{ color: '#6200ee', textAlign: 'center' }}>
-                {editIndex === null ? 'Adicionar' : 'Salvar alterações'}
+            <View style={styles.categoryContainer}>
+              {['Amigo', 'Família', 'Trabalho'].map((category) => (
+                <Pressable
+                  key={category}
+                  onPress={() => setSelectedCategory(category)}
+                  style={[
+                    styles.categoryButton,
+                    selectedCategory === category && styles.categoryButtonSelected,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.categoryButtonText,
+                      selectedCategory === category && styles.categoryButtonTextSelected,
+                    ]}
+                  >
+                    {category}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <Pressable onPress={addOrEditContact} style={styles.saveButton}>
+              <Text style={styles.saveButtonText}>
+                {editIndex === null ? 'Adicionar' : 'Salvar'}
               </Text>
             </Pressable>
             <Pressable onPress={() => setModalVisible(false)}>
-              <Text style={{ color: '#999', textAlign: 'center' }}>
-                Cancelar
-              </Text>
+              <Text style={styles.cancelButtonText}>Cancelar</Text>
             </Pressable>
           </View>
         </View>
@@ -162,76 +174,100 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f9f9f9',
     padding: 16,
   },
   addButton: {
-    marginBottom: 16,
-    alignSelf: 'center',
-    backgroundColor: 'red',
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    backgroundColor: '#007bff',
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 25,
+    height: 60,
+    width: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
   },
   addButtonText: {
     color: '#fff',
-    fontSize: 16,
-  },
-  taskItemContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-    padding: 12,
-    backgroundColor: '#f1f1f1',
-    borderRadius: 6,
-  },
-  taskItem: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  taskItemPhone: {
-    fontSize: 14,
-    color: '#666',
-  },
-  taskButtons: {
-    flexDirection: 'row',
-  },
-  taskButton: {
-    marginLeft: 8,
-    padding: 6,
-    borderRadius: 4,
-  },
-  editButton: {
-    backgroundColor: '#ffca28', // Cor de edição (amarelo)
-  },
-  deleteButton: {
-    backgroundColor: '#f44336', // Cor de exclusão (vermelho)
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
+    fontSize: 28,
+    textAlign: 'center',
   },
   emptyText: {
     textAlign: 'center',
     marginTop: 32,
     color: '#666',
+    fontSize: 14,
   },
   modalBackdrop: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)', // Fundo escuro com transparência
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
-    width: '80%',
+    width: '90%',
     backgroundColor: '#fff',
     padding: 20,
     borderRadius: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#333',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 8,
-    borderRadius: 6,
+    borderColor: '#ddd',
+    padding: 10,
+    borderRadius: 8,
     marginBottom: 12,
+    backgroundColor: '#f9f9f9',
+  },
+  categoryContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 16,
+  },
+  categoryButton: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+  },
+  categoryButtonSelected: {
+    backgroundColor: '#007bff',
+    borderColor: '#007bff',
+  },
+  categoryButtonText: {
+    color: '#333',
+  },
+  categoryButtonTextSelected: {
+    color: '#fff',
+  },
+  saveButton: {
+    backgroundColor: '#007bff',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  cancelButtonText: {
+    color: '#888',
+    textAlign: 'center',
+    fontSize: 14,
   },
 });
