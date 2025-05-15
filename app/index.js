@@ -9,7 +9,7 @@ import {
   Alert,
   StyleSheet,
 } from 'react-native';
-import ContactItem from '../components/ContactItem.js'; // Importa o componente ContactItem
+import ContactItem from '../components/ContactItem'; // Importa o componente ContactItem
 
 function formatPhoneNumber(number) {
   const cleaned = number.replace(/\D/g, '').slice(0, 11);
